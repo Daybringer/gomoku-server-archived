@@ -1,14 +1,16 @@
 "use strict";
-const express = require("express");
+// TODO replace any with Mongoose types
+import express from "express";
 const router = express.Router();
-const bcrypt = require("bcryptjs");
-const passport = require("passport");
-const nodemailer = require("nodemailer");
-const jwt = require("jsonwebtoken");
-const jwtAuth = require("../config/jwtAuth");
-const User = require("../models/User");
+import bcrypt from "bcryptjs";
+import passport from "passport";
+import nodemailer from "nodemailer";
+import jwt from "jsonwebtoken";
+import jwtAuth from "../config/jwtAuth";
+import User from "../models/User";
+import { Request, Response } from "express";
 
-router.post("/register", (req, res) => {
+router.post("/register", (req: Request, res: Response) => {
   const { username, email, password, password2 } = req.body;
   let errors = [];
   // Check required fields
@@ -31,34 +33,32 @@ router.post("/register", (req, res) => {
     res.status(500).send(errors[0].msg);
   } else {
     // Validation passed
-    User.findOne({ username: username }).then((user) => {
+    User.findOne({ username: username }).then((user: any) => {
       if (user) {
         res.status(500).send("Username is already taken");
       } else {
-        User.findOne({ email: email }).then((userEmail) => {
+        User.findOne({ email: email }).then((userEmail: any) => {
           if (userEmail) {
             res.status(500).send("Email is already taken");
           } else {
-            const newUser = new User({
-              username,
-              email,
-              password,
-            });
-
             // Hash Password
-            bcrypt.genSalt(10, (err, salt) =>
-              bcrypt.hash(newUser.password, salt, (err, hash) => {
+            bcrypt.genSalt(10, (err: Error, salt: string) =>
+              bcrypt.hash(password, salt, (err: Error, hash: string) => {
                 if (err) throw err;
 
                 // Set password to hashed
-                newUser.password = hash;
+                const newUser = new User({
+                  username,
+                  email,
+                  password: hash,
+                });
                 // Save user
                 newUser
                   .save()
-                  .then((user) => {
+                  .then((user: any) => {
                     res.status(200).send("Successfully registered");
                   })
-                  .catch((err) => console.log(err));
+                  .catch((err: Error) => console.log(err));
               })
             );
           }
@@ -71,20 +71,20 @@ router.post("/register", (req, res) => {
 router.post(
   "/login",
   passport.authenticate("local", { session: true }),
-  function(req, res) {
+  function(req: Request, res: Response) {
     // If this function gets called, authentication was successful.
     // `req.user` contains the authenticated user.
     res.status(200).send("");
   }
 );
 
-router.post("/googleLogin", (req, res) => {
+router.post("/googleLogin", (req: Request, res: Response) => {
   const { email } = req.body;
-  User.findOne({ email: email }).then((user) => {
+  User.findOne({ email: email }).then((user: any) => {
     if (user) {
       let token = jwt.sign(
         { __id: user._id, username: user.username },
-        process.env.JWTSECRET
+        process.env.JWTSECRET as string
       );
 
       res
@@ -97,9 +97,9 @@ router.post("/googleLogin", (req, res) => {
   });
 });
 
-router.post("/googleRegister", (req, res) => {
+router.post("/googleRegister", (req: Request, res: Response) => {
   const { email, username } = req.body;
-  User.findOne({ username: username }).then((user) => {
+  User.findOne({ username: username }).then((user: any) => {
     if (user) {
       res.status(401).send("Username taken");
     } else {
@@ -110,12 +110,12 @@ router.post("/googleRegister", (req, res) => {
         .then(() => {
           res.status(200).send("Successfully registered");
         })
-        .catch((err) => console.log(err));
+        .catch((err: Error) => console.log(err));
     }
   });
 });
 
-router.post("/islogged", (req, res) => {
+router.post("/islogged", (req: Request, res: Response) => {
   if (req.user) {
     res.status(200).send(req.user);
   } else {
@@ -124,30 +124,12 @@ router.post("/islogged", (req, res) => {
   }
 });
 
-router.post("/changeColors", (req, res) => {
-  const { colorMain, colorSecond, colorMainDark } = req.body;
-
-  if (!req.user) {
-    res.status(500).send();
-  } else {
-    let username = req.user.username;
-    let colorsConcat = `${colorMain},${colorSecond},${colorMainDark}`;
-    User.findOneAndUpdate({ username: username }, { colors: colorsConcat })
-      .then(function() {
-        res.status(200).send();
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  }
-});
-
-router.post("/logout", (req, res) => {
+router.post("/logout", (req: Request, res: Response) => {
   req.logout();
   res.status(200).send("Logged out");
 });
 
-router.post("/contact", (req, res) => {
+router.post("/contact", (req: Request, res: Response) => {
   const { nickname, email, message } = req.body;
   if (!nickname || !email || !message) {
     res.status(500).send("Please fill in all the fields");
@@ -168,7 +150,7 @@ router.post("/contact", (req, res) => {
       text: `${message}`,
       replyTo: `${email}`,
     };
-    transporter.sendMail(mailOptions, function(err) {
+    transporter.sendMail(mailOptions, function(err: Error | null, info: any) {
       if (err) {
         console.log(err);
         res.status(500).send("Unexpected problem");
@@ -179,7 +161,7 @@ router.post("/contact", (req, res) => {
   }
 });
 
-router.post("/changepassword", (req, res) => {
+router.post("/changepassword", (req: Request, res: Response) => {
   const { username, password, password2 } = req.body;
   let errors = [];
   // Check required fields
@@ -208,18 +190,17 @@ router.post("/changepassword", (req, res) => {
     });
   } else {
     // * Hashing password
-    bcrypt.genSalt(10, (err, salt) =>
-      bcrypt.hash(password, salt, (err, hash) => {
+    bcrypt.genSalt(10, (err: Error, salt: string) =>
+      bcrypt.hash(password, salt, (err: Error, hash: string) => {
         let updatePass = User.findOneAndUpdate(
           { username: username },
           { password: hash }
         ).then(function() {
-          req.flash("success_msg", "Password succesfully changed");
-          res.redirect("/settings");
+          res.status(200).send("Password changed");
         });
       })
     );
   }
 });
 
-module.exports = router;
+export { router as apiRouter };

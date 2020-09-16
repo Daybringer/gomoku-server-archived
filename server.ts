@@ -1,4 +1,7 @@
 "use strict";
+
+import { Namespace, Socket } from "socket.io";
+
 // ? IN DEVELOP LOAD CONFIG >> MONGODB KEY
 if (process.env.NODE_ENV !== "production") {
   require("dotenv/config");
@@ -6,21 +9,24 @@ if (process.env.NODE_ENV !== "production") {
 
 // * IMPORTS
 // ? EXPRESS
-const express = require("express");
+import express from "express";
 const app = express();
-const compression = require("compression");
-const cors = require("cors");
+import compression from "compression";
+import cors from "cors";
+
+// Express types
+import { Request, Response } from "express";
 
 // ? MONGOOSE
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 // ? PASSPORT and SESSION
-const passport = require("passport");
-const session = require("cookie-session");
+import passport from "passport";
+import session from "cookie-session";
 
 // ? SOCKET.IO + HTTP
-const socketIO = require("socket.io");
-const http = require("http");
+import socketIO from "socket.io";
+import http from "http";
 
 // ? PASSPORT CONFIG
 require("./config/passport")(passport);
@@ -33,7 +39,7 @@ app.use(cors());
 // ? EXPRESS SESSION
 app.use(
   session({
-    keys: [process.env.COOKIE_SECRET],
+    keys: [process.env.COOKIE_SECRET as string],
     resave: true,
     saveUninitialized: true,
     cookie: { expires: new Date(253402300000000) },
@@ -45,19 +51,22 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // ? ROUTES
-const apiRouter = require("./routes/api");
-const indexRouter = require("./routes/index");
+import { apiRouter } from "./routes/api";
+import { indexRouter } from "./routes/index";
 app.use("/api/", apiRouter);
 app.use("/", indexRouter);
 
 app.use(compression());
+
 if (process.env.NODE_ENV === "production" || true) {
   //Static folder
   app.use(express.static(__dirname + "/public/"));
 
   // Handle SPA
 
-  app.get(/.*/, (req, res) => res.sendFile(__dirname + "/public/index.html"));
+  app.get(/.*/, (req: Request, res: Response) =>
+    res.sendFile(__dirname + "/public/index.html")
+  );
 }
 
 // ? MongoDB Constructor and URL parser deprecation warning fix
@@ -66,27 +75,26 @@ mongoose.set("useNewUrlParser", true);
 mongoose.set("useFindAndModify", false);
 
 // ? DB connection
-mongoose.connect(process.env.DB_CONNECTION);
+mongoose.connect(process.env.DB_CONNECTION as string);
 const db = mongoose.connection;
 
-db.on("error", (error) => console.error(error));
+db.on("error", (err: Error) => console.error(err));
 db.once("open", () => console.log("Connected to Mongoose"));
 
 const PORT = process.env.PORT || 3000;
 
-const server = http.Server(app);
+const server = new http.Server(app);
 
 // utils functions import
-const genID = require("./utils/genUniqueID");
-const gamePlan = require("./utils/genGamePlan");
+import genID from "./utils/genUniqueID";
+import gamePlan from "./utils/genMatrix";
 
-const { isNull } = require("util");
-const {
+import {
   getUserElo,
   startGame,
   gameClick,
   playerDisconnected,
-} = require("./utils/socketUtilFuncs");
+} from "./utils/socketUtilFuncs";
 
 const io = socketIO(server);
 server.listen(PORT);
@@ -106,16 +114,17 @@ const gameMode = {
 };
 
 // ? Managing Socket.IO instances
-let searchNsp = io.of("/q/search");
-let rankedSearchNsp = io.of("/r/search");
-let quickNsp = io.of("/q/game");
-let rankedNsp = io.of("/r/game");
-let privateGameNsp = io.of("/p/game");
-let waitingRoomNsp = io.of("/waiting");
+let searchNsp: Namespace = io.of("/q/search");
+let rankedSearchNsp: Namespace = io.of("/r/search");
+let quickNsp: Namespace = io.of("/q/game");
+let rankedNsp: Namespace = io.of("/r/game");
+let privateGameNsp: Namespace = io.of("/p/game");
+let waitingRoomNsp: Namespace = io.of("/waiting");
 
 // Quick
-searchNsp.on("connection", function(socket) {
-  gameMode.quick.que.push(socket.id);
+searchNsp.on("connection", function(socket: Socket) {
+  // FIXME why never?
+  gameMode.quick.que.push(socket.id as never);
   if (gameMode.quick.que.length >= 2) {
     let roomID = genID(gameMode.quick.games, 7);
     gameMode.quick.games[roomID] = {
@@ -130,7 +139,7 @@ searchNsp.on("connection", function(socket) {
         { timeLeft: 150, timeStamp: Date.now() },
       ],
       won: null,
-      gamePlan: gamePlan(),
+      gamePlan: gamePlan(15),
     };
 
     searchNsp.to(gameMode.quick.que[0]).emit("gameCreated", roomID);
@@ -167,7 +176,7 @@ waitingRoomNsp.on("connection", function(socket, username) {
   socket.on("createRoom", function(timeInMinutes) {
     let roomID = genID(gameMode.private.games, 4);
 
-    const isTimed = !isNull(timeInMinutes);
+    const isTimed = timeInMinutes !== null;
 
     gameMode.private.games[roomID] = {
       players: [],
@@ -180,7 +189,7 @@ waitingRoomNsp.on("connection", function(socket, username) {
         { timeLeft: timeInMinutes * 60, timeStamp: Date.now() },
       ],
       won: null,
-      gamePlan: gamePlan(),
+      gamePlan: gamePlan(15),
     };
 
     socket.join(roomID);
@@ -261,7 +270,7 @@ rankedSearchNsp.on("connection", function(socket) {
             { timeLeft: 150, timeStamp: Date.now() },
           ],
           won: null,
-          gamePlan: gamePlan(),
+          gamePlan: gamePlan(15),
         };
 
         rankedSearchNsp

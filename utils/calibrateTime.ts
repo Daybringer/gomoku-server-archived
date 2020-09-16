@@ -1,10 +1,17 @@
+import { Namespace } from "socket.io";
+
 /**
  * Calibrate local time to server time, called on click and after timeOut
  * @param {Object} games Object containing games of certain namespace/type
  * @param {Object} namespace Socket.io namespace
  * @param {String} roomID id of current room/game
  */
-function calibrateTime(games, roomID, namespace) {
+// FIXME Games object
+export default function calibrateTime(
+  games: any,
+  roomID: string,
+  namespace: Namespace
+) {
   if (games[roomID]) {
     let currPlayerIx = (games[roomID].first + games[roomID].round) % 2;
     let game = games[roomID];
@@ -25,5 +32,3 @@ function calibrateTime(games, roomID, namespace) {
     }
   }
 }
-
-module.exports = calibrateTime;

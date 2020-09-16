@@ -1,6 +1,7 @@
-const calibrateTime = require("./calibrateTime");
-const checkWin = require("./checkWin");
-const User = require("../models/User");
+import calibrateTime from "./calibrateTime";
+import checkWin from "./checkWin";
+import User from "../models/User";
+import { Namespace, Socket } from "socket.io";
 
 /**
  *
@@ -9,13 +10,18 @@ const User = require("../models/User");
  * @param {Object} namespace socket.io namespace
  * @param {Object} socket socket.io instance
  */
-function playerDisconnected(games, rated, namespace, socket) {
+function playerDisconnected(
+  games: any,
+  rated: boolean,
+  namespace: Namespace,
+  socket: Socket
+): void {
   let existingRooms = Object.keys(games);
   for (let room of existingRooms) {
     if (games[room].players.includes(socket.id)) {
       if (games[room].won == null || games[room].won == false) {
         if (rated) {
-          calcAndUpdateELO(games[room], "left", socket, (eloDiff) => {
+          calcAndUpdateELO(games[room], "left", socket, (eloDiff: number) => {
             namespace.to(room).emit("playerLeft", eloDiff);
           });
         } else {
@@ -39,7 +45,15 @@ function playerDisconnected(games, rated, namespace, socket) {
  * @param {Object} namespace Socket.io namespace
  * @param {Object} socket Socket.io instance
  */
-function gameClick(games, roomID, xPos, yPos, rated, namespace, socket) {
+function gameClick(
+  games: any,
+  roomID: string,
+  xPos: number,
+  yPos: number,
+  rated: boolean,
+  namespace: Namespace,
+  socket: Socket
+) {
   const game = games[roomID];
 
   if (game) {
@@ -66,23 +80,34 @@ function gameClick(games, roomID, xPos, yPos, rated, namespace, socket) {
           game.players
         );
 
+      enum gameState {
+        WIN = "win",
+        TIE = "tie",
+        CONTINUE = "continue",
+      }
+
       const gameBoardState = checkWin(game.gamePlan, yPos, xPos, round);
-      if (gameBoardState !== false) {
-        if (gameBoardState === "win") {
+      if (gameBoardState !== gameState.CONTINUE) {
+        if (gameBoardState === gameState.WIN) {
           if (rated) {
-            calcAndUpdateELO(game, "win", socket, (eloDiff) => {
-              namespace.to(roomID).emit("win", socket.id, eloDiff);
+            calcAndUpdateELO(game, gameState.WIN, socket, (eloDiff: number) => {
+              namespace.to(roomID).emit(gameState.WIN, socket.id, eloDiff);
             });
           } else {
-            namespace.to(roomID).emit("win", socket.id);
+            namespace.to(roomID).emit(gameState.WIN, socket.id);
           }
-        } else if (gameBoardState === "tie") {
+        } else if (gameBoardState === gameState.TIE) {
           if (rated) {
-            calcAndUpdateELO(game, "tie", socket, (eloDiff, tieGainerID) => {
-              namespace.to(roomID).emit("tie", eloDiff, tieGainerID);
-            });
+            calcAndUpdateELO(
+              game,
+              gameState.TIE,
+              socket,
+              (eloDiff: number, tieGainerID: string) => {
+                namespace.to(roomID).emit(gameState.TIE, eloDiff, tieGainerID);
+              }
+            );
           } else {
-            namespace.to(roomID).emit("tie");
+            namespace.to(roomID).emit(gameState.TIE);
           }
         }
 
@@ -112,7 +137,12 @@ function gameClick(games, roomID, xPos, yPos, rated, namespace, socket) {
  * @param {Object} socket socket.io instance
  * @param {Function} callback
  */
-function calcAndUpdateELO(game, gameEnding, socket, callback) {
+function calcAndUpdateELO(
+  game: any,
+  gameEnding: string,
+  socket: Socket,
+  callback: Function
+): void {
   const id1 = Object.keys(game.nicks)[0];
   const id2 = Object.keys(game.nicks)[1];
 
@@ -174,10 +204,16 @@ function calcAndUpdateELO(game, gameEnding, socket, callback) {
  * @param {Object} games existing games from certain gameType
  * @param {String} roomID
  * @param {String} username
- * @param {Object} namespace socket.io namespace (e.g rankedNsp, quickNsp)
- * @param {Object} socket socket.io instance
+ * @param {Namespace} namespace socket.io namespace (e.g rankedNsp, quickNsp)
+ * @param {Socket} socket socket.io instance
  */
-function startGame(games, roomID, username, namespace, socket) {
+function startGame(
+  games: any,
+  roomID: string,
+  username: string,
+  namespace: Namespace,
+  socket: Socket
+): void {
   // Check if room exists, otherwise send to 404
   if (!games.hasOwnProperty(roomID)) {
     socket.emit("roomMissing");
@@ -222,7 +258,8 @@ function startGame(games, roomID, username, namespace, socket) {
  * @param {Number} newElo
  * @return {Boolean} true\false
  */
-function updateElo(username, newElo) {
+// TODO Move to promise based function
+function updateElo(username: string, newElo: number): void {
   User.findOneAndUpdate({ username }, { elo: newElo })
     .then(() => {})
     .catch((err) => {
@@ -236,8 +273,10 @@ function updateElo(username, newElo) {
  * @param {Function} callback
  * @return {Number} Elo
  */
-function getUserElo(username, callback) {
-  User.findOne({ username: username }).then((user) => {
+// TODO Move to promise based functoin
+// TODO Mongoose user type Document <= any
+function getUserElo(username: string, callback: Function) {
+  User.findOne({ username: username }).then((user: any) => {
     if (user) {
       callback(null, user.elo);
     } else {
@@ -247,7 +286,7 @@ function getUserElo(username, callback) {
   });
 }
 
-module.exports = {
+export {
   getUserElo,
   updateElo,
   startGame,

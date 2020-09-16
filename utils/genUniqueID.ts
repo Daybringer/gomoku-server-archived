@@ -4,8 +4,9 @@
  * @param {Number} length Length of output string
  * @returns {String}
  */
-function genID(compareObject, length) {
-  if (length <= 0) return false;
+// FIXME Add safety instead of empty string...
+function genID(compareObject: object, length: number): string {
+  if (length <= 0) return "";
   for (let x = 0; x < 100; x++) {
     let randID = Math.random()
       .toString(36)
@@ -15,6 +16,7 @@ function genID(compareObject, length) {
       return randID;
     }
   }
+  return "";
 }
 
-module.exports = genID;
+export default genID;
