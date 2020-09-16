@@ -1,11 +1,11 @@
 "use strict";
 import LocalStrategy from "passport-local";
 import bcrypt from "bcryptjs";
+import passport, { PassportStatic } from "passport";
 
 // Load User Model
-import User from "../models/User";
-
-export default function(passport) {
+import User, { IUser } from "../models/User";
+export default function(passport: PassportStatic) {
   passport.use(
     new LocalStrategy.Strategy(
       {
@@ -41,11 +41,11 @@ export default function(passport) {
     )
   );
 
-  passport.serializeUser(function(user: Document, done: Function) {
+  passport.serializeUser(function(user: IUser, done: Function) {
     done(null, user.id);
   });
 
-  passport.deserializeUser(function(id, done: Function) {
+  passport.deserializeUser(function(id: string, done: Function) {
     User.findById(id, function(err, user) {
       done(err, user);
       if (err) console.log(err);

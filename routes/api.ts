@@ -1,5 +1,4 @@
 "use strict";
-// TODO replace any with Mongoose types
 import express from "express";
 const router = express.Router();
 import bcrypt from "bcryptjs";
@@ -11,8 +10,23 @@ import User from "../models/User";
 import { Request, Response } from "express";
 
 router.post("/register", (req: Request, res: Response) => {
-  const { username, email, password, password2 } = req.body;
-  let errors = [];
+  const {
+    username,
+    email,
+    password,
+    password2,
+  }: {
+    username: string;
+    email: string;
+    password: string;
+    password2: string;
+  } = req.body;
+
+  interface errorMsg {
+    msg: string;
+  }
+
+  let errors: errorMsg[] = [];
   // Check required fields
   if (!username || !email || !password || !password2) {
     errors.push({ msg: "Please fill in all the fields" });
@@ -30,19 +44,20 @@ router.post("/register", (req: Request, res: Response) => {
 
   if (errors.length > 0) {
     console.log(errors);
-    res.status(500).send(errors[0].msg);
+    res.status(403).send(errors[0].msg);
   } else {
     // Validation passed
-    User.findOne({ username: username }).then((user: any) => {
+    User.findOne({ username: username }).then((user) => {
       if (user) {
-        res.status(500).send("Username is already taken");
+        res.status(403).send("Username is already taken");
       } else {
-        User.findOne({ email: email }).then((userEmail: any) => {
+        User.findOne({ email: email }).then((userEmail) => {
           if (userEmail) {
-            res.status(500).send("Email is already taken");
+            res.status(403).send("Email is already taken");
           } else {
             // Hash Password
-            bcrypt.genSalt(10, (err: Error, salt: string) =>
+            bcrypt.genSalt(10, (err: Error, salt: string) => {
+              if (err) throw err;
               bcrypt.hash(password, salt, (err: Error, hash: string) => {
                 if (err) throw err;
 
@@ -55,12 +70,12 @@ router.post("/register", (req: Request, res: Response) => {
                 // Save user
                 newUser
                   .save()
-                  .then((user: any) => {
+                  .then((user) => {
                     res.status(200).send("Successfully registered");
                   })
                   .catch((err: Error) => console.log(err));
-              })
-            );
+              });
+            });
           }
         });
       }
@@ -79,11 +94,11 @@ router.post(
 );
 
 router.post("/googleLogin", (req: Request, res: Response) => {
-  const { email } = req.body;
-  User.findOne({ email: email }).then((user: any) => {
+  const { email }: { email: string } = req.body;
+  User.findOne({ email: email }).then((user) => {
     if (user) {
       let token = jwt.sign(
-        { __id: user._id, username: user.username },
+        { __id: user.id, username: user.username },
         process.env.JWTSECRET as string
       );
 
@@ -92,16 +107,16 @@ router.post("/googleLogin", (req: Request, res: Response) => {
         .status(200)
         .send({ registered: true, username: user.username });
     } else {
-      res.status(200).send({ registered: false, username: null });
+      res.status(200).send({ registered: false, username: undefined });
     }
   });
 });
 
 router.post("/googleRegister", (req: Request, res: Response) => {
-  const { email, username } = req.body;
-  User.findOne({ username: username }).then((user: any) => {
+  const { email, username }: { email: string; username: string } = req.body;
+  User.findOne({ username: username }).then((user) => {
     if (user) {
-      res.status(401).send("Username taken");
+      res.status(403).send("Username taken");
     } else {
       const newUser = new User({ username, email });
 
@@ -130,9 +145,13 @@ router.post("/logout", (req: Request, res: Response) => {
 });
 
 router.post("/contact", (req: Request, res: Response) => {
-  const { nickname, email, message } = req.body;
+  const {
+    nickname,
+    email,
+    message,
+  }: { nickname: string; email: string; message: string } = req.body;
   if (!nickname || !email || !message) {
-    res.status(500).send("Please fill in all the fields");
+    res.status(403).send("Please fill in all the fields");
   } else {
     const transporter = nodemailer.createTransport({
       host: "smtp.zoho.eu",
@@ -162,8 +181,17 @@ router.post("/contact", (req: Request, res: Response) => {
 });
 
 router.post("/changepassword", (req: Request, res: Response) => {
-  const { username, password, password2 } = req.body;
-  let errors = [];
+  const {
+    username,
+    password,
+    password2,
+  }: { username: string; password: string; password2: string } = req.body;
+
+  interface errorMsg {
+    msg: string;
+  }
+
+  let errors: errorMsg[] = [];
   // Check required fields
   if (!password || !password2) {
     errors.push({ msg: "Please fill in all the fields" });

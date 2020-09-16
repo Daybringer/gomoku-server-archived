@@ -7,7 +7,10 @@ enum gameBoard {
   MODERN = "modern",
 }
 
-export interface eloHistory {}
+export interface game {
+  timestamp: Date;
+  currElo: number;
+}
 
 export interface colors {
   enemeyColor: string;
@@ -15,13 +18,15 @@ export interface colors {
 }
 
 export interface IUser extends mongoose.Document {
+  id: string;
   username: string;
   googleId?: string;
-  password?: string;
+  password: string;
   email?: string;
   elo?: number;
-  eloHistory?: eloHistory;
+  eloHistory?: game[];
   isVerified?: boolean;
+  totalRankedGames?: number;
   colors?: colors;
   gameBoard?: gameBoard;
   date?: Date;
@@ -51,10 +56,12 @@ export const UserSchema = new mongoose.Schema({
   },
   colors: {
     enemyColor: {
-      default: "",
+      type: String,
+      default: "#ff2079",
     },
     playerColor: {
-      default: "",
+      type: String,
+      default: "#00b3fe",
     },
   },
   gameBoard: {
@@ -65,6 +72,21 @@ export const UserSchema = new mongoose.Schema({
     type: Number,
     default: 1000,
   },
+  totalRankedGames: {
+    type: Number,
+    default: 0,
+  },
+  eloHistory: [
+    {
+      timestamp: {
+        type: Date,
+        default: Date.now(),
+      },
+      currElo: {
+        type: Number,
+      },
+    },
+  ],
 });
 
 const User = mongoose.model<IUser>("User", UserSchema);

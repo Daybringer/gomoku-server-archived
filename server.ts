@@ -40,9 +40,7 @@ app.use(cors());
 app.use(
   session({
     keys: [process.env.COOKIE_SECRET as string],
-    resave: true,
-    saveUninitialized: true,
-    cookie: { expires: new Date(253402300000000) },
+    expires: new Date(253402300000000),
   })
 );
 
@@ -172,7 +170,7 @@ quickNsp.on("connection", function(socket) {
 });
 
 // Private
-waitingRoomNsp.on("connection", function(socket, username) {
+waitingRoomNsp.on("connection", function(socket: Socket, username: string) {
   socket.on("createRoom", function(timeInMinutes) {
     let roomID = genID(gameMode.private.games, 4);
 
@@ -246,9 +244,9 @@ privateGameNsp.on("connection", function(socket) {
 
 // Ranked
 rankedSearchNsp.on("connection", function(socket) {
-  socket.on("beginSearch", function(username) {
+  socket.on("beginSearch", function(username: string) {
     // Assign Elo
-    getUserElo(username, (err, elo) => {
+    getUserElo(username, (err: Error, elo: number) => {
       if (err) console.log(err);
       gameMode.ranked.que.push({ id: socket.id, elo, username });
 
