@@ -22,7 +22,7 @@ import mongoose from "mongoose";
 
 // ? PASSPORT and SESSION
 import passport from "passport";
-import session from "cookie-session";
+// import session from "cookie-session";
 
 // ? SOCKET.IO + HTTP
 import socketIO from "socket.io";
@@ -37,16 +37,16 @@ app.use(express.urlencoded({ extended: true })); // to support URL-encoded bodie
 app.use(cors());
 
 // ? EXPRESS SESSION
-app.use(
-  session({
-    keys: [process.env.COOKIE_SECRET as string],
-    expires: new Date(253402300000000),
-  })
-);
+// app.use(
+//   session({
+//     keys: [process.env.COOKIE_SECRET as string],
+//     expires: new Date(253402300000000),
+//   })
+// );
 
 // ? PASSPORT MIDDLEWARE
 app.use(passport.initialize());
-app.use(passport.session());
+// app.use(passport.session());
 
 // ? ROUTES
 import { apiRouter } from "./routes/api";
@@ -97,7 +97,47 @@ import {
 const io = socketIO(server);
 server.listen(PORT);
 
-const gameMode = {
+interface time {
+  timeLeft: number;
+  timeStamp: number;
+}
+
+/**
+ * General game object
+ *
+ * times => number | Date, number is time to left, Date is curr Date
+ */
+interface Game {
+  nicks: { [key: string]: string };
+  first: number;
+  round: number;
+  isTimed: boolean;
+  times: time[];
+  won: boolean | null;
+  gamePlan: number[][] | undefined;
+  players: string[];
+  intervalLink?: NodeJS.Timeout | null;
+  elo?: {
+    [key: string]: number;
+  };
+}
+
+interface gameMode {
+  quick: {
+    que: string[];
+    games: { [key: string]: Game };
+  };
+  private: { games: { [key: string]: Game } };
+  ranked: {
+    que?: [
+      { id: string; elo: number; username: string },
+      { id: string; elo: number; username: string }
+    ];
+    games: { [key: string]: Game };
+  };
+}
+// FIXME Fix the ranked que coercition and non-null assertion operators
+const gameMode: gameMode = {
   quick: {
     que: [],
     games: {},
@@ -106,7 +146,6 @@ const gameMode = {
     games: {},
   },
   ranked: {
-    que: [],
     games: {},
   },
 };
@@ -121,14 +160,13 @@ let waitingRoomNsp: Namespace = io.of("/waiting");
 
 // Quick
 searchNsp.on("connection", function(socket: Socket) {
-  // FIXME why never?
   gameMode.quick.que.push(socket.id as never);
   if (gameMode.quick.que.length >= 2) {
     let roomID = genID(gameMode.quick.games, 7);
     gameMode.quick.games[roomID] = {
       players: [],
       nicks: {},
-      first: null,
+      first: 0,
       round: 0,
       isTimed: true,
       intervalLink: null,
@@ -179,7 +217,7 @@ waitingRoomNsp.on("connection", function(socket: Socket, username: string) {
     gameMode.private.games[roomID] = {
       players: [],
       nicks: {},
-      first: null,
+      first: 0,
       round: 0,
       isTimed: isTimed,
       times: [
@@ -248,18 +286,18 @@ rankedSearchNsp.on("connection", function(socket) {
     // Assign Elo
     getUserElo(username, (err: Error, elo: number) => {
       if (err) console.log(err);
-      gameMode.ranked.que.push({ id: socket.id, elo, username });
+      gameMode.ranked.que!.push({ id: socket.id, elo, username });
 
-      if (gameMode.ranked.que.length >= 2) {
+      if (gameMode.ranked.que!.length >= 2) {
         let roomID = genID(gameMode.ranked.games, 7);
         gameMode.ranked.games[roomID] = {
           players: [],
           nicks: {},
           elo: {
-            [gameMode.ranked.que[0].username]: gameMode.ranked.que[0].elo,
-            [gameMode.ranked.que[1].username]: gameMode.ranked.que[1].elo,
+            [gameMode.ranked.que![0].username]: gameMode.ranked.que![0].elo,
+            [gameMode.ranked.que![1].username]: gameMode.ranked.que![1].elo,
           },
-          first: null,
+          first: 0,
           round: 0,
           intervalLink: null,
           isTimed: true,
@@ -272,22 +310,22 @@ rankedSearchNsp.on("connection", function(socket) {
         };
 
         rankedSearchNsp
-          .to(gameMode.ranked.que[0].id)
+          .to(gameMode.ranked.que![0].id)
           .emit("gameCreated", roomID);
         rankedSearchNsp
-          .to(gameMode.ranked.que[1].id)
+          .to(gameMode.ranked.que![1].id)
           .emit("gameCreated", roomID);
 
-        gameMode.ranked.que.splice(0, 2);
+        gameMode.ranked.que!.splice(0, 2);
       }
     });
   });
 
   socket.on("disconnect", function() {
-    for (let queMember of gameMode.ranked.que) {
+    for (let queMember of gameMode.ranked.que!) {
       if (queMember.id === socket.id) {
-        let indexOfSocket = gameMode.ranked.que.indexOf(queMember);
-        gameMode.ranked.que.splice(indexOfSocket, 1);
+        let indexOfSocket = gameMode.ranked.que!.indexOf(queMember);
+        gameMode.ranked.que!.splice(indexOfSocket, 1);
       }
     }
   });

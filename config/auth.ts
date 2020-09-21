@@ -17,7 +17,6 @@ export default {
     res: Response,
     next: NextFunction
   ) {
-    // FIXME Response does not have logged property
     req.isAuthenticated() ? (res.logged = true) : (res.logged = false);
     return next();
   },
