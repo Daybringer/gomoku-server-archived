@@ -5,7 +5,7 @@ import passport, { PassportStatic } from "passport";
 
 // Load User Model
 import User, { IUser } from "../models/User";
-export default function(passport: PassportStatic) {
+module.exports = function(passport: PassportStatic) {
   passport.use(
     new LocalStrategy.Strategy(
       {
@@ -51,4 +51,4 @@ export default function(passport: PassportStatic) {
       if (err) console.log(err);
     });
   });
-}
+};

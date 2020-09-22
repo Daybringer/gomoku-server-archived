@@ -2,6 +2,7 @@ import calibrateTime from "./calibrateTime";
 import checkWin from "./checkWin";
 import User from "../models/User";
 import { Namespace, Socket } from "socket.io";
+import { Game } from "../types/Game";
 
 /**
  *
@@ -11,7 +12,7 @@ import { Namespace, Socket } from "socket.io";
  * @param {Object} socket socket.io instance
  */
 function playerDisconnected(
-  games: any,
+  games: { [key: string]: Game },
   rated: boolean,
   namespace: Namespace,
   socket: Socket
@@ -29,7 +30,7 @@ function playerDisconnected(
         }
       }
 
-      clearInterval(games[room].intervalLink);
+      clearInterval(games[room].intervalLink as NodeJS.Timeout);
       delete games[room];
     }
   }
@@ -46,7 +47,7 @@ function playerDisconnected(
  * @param {Object} socket Socket.io instance
  */
 function gameClick(
-  games: any,
+  games: { [key: string]: Game },
   roomID: string,
   xPos: number,
   yPos: number,
@@ -64,9 +65,9 @@ function gameClick(
       game.won === false &&
       game.gamePlan[xPos][yPos] === 0
     ) {
-      clearInterval(game.intervalLink);
+      clearInterval(game.intervalLink as NodeJS.Timeout);
 
-      game.gamePlan[xPos][yPos] = round % 2 ? "1" : "2";
+      game.gamePlan[xPos][yPos] = round % 2 ? 1 : 2;
 
       namespace
         .to(roomID)

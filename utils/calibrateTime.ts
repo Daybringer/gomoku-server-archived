@@ -11,7 +11,7 @@ export default function calibrateTime(
   games: any,
   roomID: string,
   namespace: Namespace
-) {
+): number {
   if (games[roomID]) {
     let currPlayerIx = (games[roomID].first + games[roomID].round) % 2;
     let game = games[roomID];
@@ -31,4 +31,6 @@ export default function calibrateTime(
       return restSeconds - deltaTime / 1000;
     }
   }
+  throw new Error("Calibrate time has failed");
+  return 0;
 }

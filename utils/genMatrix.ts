@@ -3,8 +3,8 @@
  * @param n - length of matrix
  * @returns Array<Array<number>>
  */
-export default function gen(n: number): number[][] | undefined {
-  if (n < 0) return undefined;
+export default function gen(n: number): number[][] {
+  if (n < 0) return [];
 
   let matrix = [];
   for (let x = 0; x < n; x++) {

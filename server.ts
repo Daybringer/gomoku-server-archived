@@ -97,45 +97,8 @@ import {
 const io = socketIO(server);
 server.listen(PORT);
 
-interface time {
-  timeLeft: number;
-  timeStamp: number;
-}
+import { gameMode } from "./types/Game";
 
-/**
- * General game object
- *
- * times => number | Date, number is time to left, Date is curr Date
- */
-interface Game {
-  nicks: { [key: string]: string };
-  first: number;
-  round: number;
-  isTimed: boolean;
-  times: time[];
-  won: boolean | null;
-  gamePlan: number[][] | undefined;
-  players: string[];
-  intervalLink?: NodeJS.Timeout | null;
-  elo?: {
-    [key: string]: number;
-  };
-}
-
-interface gameMode {
-  quick: {
-    que: string[];
-    games: { [key: string]: Game };
-  };
-  private: { games: { [key: string]: Game } };
-  ranked: {
-    que?: [
-      { id: string; elo: number; username: string },
-      { id: string; elo: number; username: string }
-    ];
-    games: { [key: string]: Game };
-  };
-}
 // FIXME Fix the ranked que coercition and non-null assertion operators
 const gameMode: gameMode = {
   quick: {
@@ -220,6 +183,7 @@ waitingRoomNsp.on("connection", function(socket: Socket, username: string) {
       first: 0,
       round: 0,
       isTimed: isTimed,
+      intervalLink: null,
       times: [
         { timeLeft: timeInMinutes * 60, timeStamp: Date.now() },
         { timeLeft: timeInMinutes * 60, timeStamp: Date.now() },
