@@ -1,5 +1,4 @@
 "use strict";
-
 import { Namespace, Socket } from "socket.io";
 
 // ? IN DEVELOP LOAD CONFIG >> MONGODB KEY
@@ -7,6 +6,7 @@ if (process.env.NODE_ENV !== "production") {
   require("dotenv/config");
 }
 
+console.log("tested");
 // * IMPORTS
 // ? EXPRESS
 import express from "express";
@@ -22,7 +22,8 @@ import mongoose from "mongoose";
 
 // ? PASSPORT and SESSION
 import passport from "passport";
-// import session from "cookie-session";
+//@ts-ignore
+import session from "cookie-session";
 
 // ? SOCKET.IO + HTTP
 import socketIO from "socket.io";
@@ -37,16 +38,16 @@ app.use(express.urlencoded({ extended: true })); // to support URL-encoded bodie
 app.use(cors());
 
 // ? EXPRESS SESSION
-// app.use(
-//   session({
-//     keys: [process.env.COOKIE_SECRET as string],
-//     expires: new Date(253402300000000),
-//   })
-// );
+app.use(
+  session({
+    keys: [process.env.COOKIE_SECRET as string],
+    expires: new Date(253402300000000),
+  })
+);
 
 // ? PASSPORT MIDDLEWARE
 app.use(passport.initialize());
-// app.use(passport.session());
+app.use(passport.session());
 
 // ? ROUTES
 import { apiRouter } from "./routes/api";
@@ -71,6 +72,8 @@ if (process.env.NODE_ENV === "production" || true) {
 mongoose.set("useUnifiedTopology", true);
 mongoose.set("useNewUrlParser", true);
 mongoose.set("useFindAndModify", false);
+
+console.log(process.env.DB_CONNECTION);
 
 // ? DB connection
 mongoose.connect(process.env.DB_CONNECTION as string);
