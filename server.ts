@@ -6,6 +6,8 @@ if (process.env.NODE_ENV !== "production") {
   require("dotenv/config");
 }
 
+// 2
+
 // * IMPORTS
 // ? EXPRESS
 import express from "express";
