@@ -6,7 +6,7 @@ if (process.env.NODE_ENV !== "production") {
   require("dotenv/config");
 }
 
-// 2
+// 1
 
 // * IMPORTS
 // ? EXPRESS
@@ -167,6 +167,10 @@ quickNsp.on("connection", function(socket) {
 
   socket.on("game click", function(roomID, xPos, yPos) {
     gameClick(games, roomID, xPos, yPos, false, quickNsp, socket);
+  });
+
+  socket.on("addMessage", function(text) {
+    socket.broadcast.emit("newMessage", text);
   });
 
   socket.on("disconnect", function() {
