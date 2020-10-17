@@ -6,7 +6,7 @@ if (process.env.NODE_ENV !== "production") {
   require("dotenv/config");
 }
 
-// 1
+// 2
 
 // * IMPORTS
 // ? EXPRESS
@@ -74,8 +74,6 @@ mongoose.set("useUnifiedTopology", true);
 mongoose.set("useNewUrlParser", true);
 mongoose.set("useFindAndModify", false);
 
-console.log(process.env.DB_CONNECTION);
-
 // ? DB connection
 mongoose.connect(process.env.DB_CONNECTION as string);
 const db = mongoose.connection;
@@ -104,7 +102,7 @@ server.listen(PORT);
 import { gameMode } from "./types/Game";
 
 // FIXME Fix the ranked que coercition and non-null assertion operators
-const gameMode: gameMode = {
+const gameMode: any = {
   quick: {
     que: [],
     games: {},
@@ -114,6 +112,7 @@ const gameMode: gameMode = {
   },
   ranked: {
     games: {},
+    que: [],
   },
 };
 
@@ -219,6 +218,7 @@ waitingRoomNsp.on("connection", function(socket: Socket, username: string) {
       socket.emit("room invalid");
     }
   });
+
   socket.on("disconnect", function() {
     let existingRooms = Object.keys(gameMode.private.games);
     for (let room of existingRooms) {
@@ -245,6 +245,10 @@ privateGameNsp.on("connection", function(socket) {
       privateGameNsp,
       socket
     );
+  });
+
+  socket.on("addMessage", function(text) {
+    socket.broadcast.emit("newMessage", text);
   });
 
   socket.on("disconnect", function() {
@@ -307,6 +311,10 @@ rankedNsp.on("connection", function(socket) {
 
   socket.on("gameJoined", function(roomID, username) {
     startGame(games, roomID, username, rankedNsp, socket);
+  });
+
+  socket.on("addMessage", function(text) {
+    socket.broadcast.emit("newMessage", text);
   });
 
   socket.on("game click", function(roomID, xPos, yPos) {

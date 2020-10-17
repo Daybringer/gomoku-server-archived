@@ -26,7 +26,7 @@ module.exports = function(passport: PassportStatic) {
               password,
               user.password,
               (err: Error, isMatch: boolean) => {
-                if (err) throw err;
+                if (err) console.log(err);
 
                 if (isMatch) {
                   return done(null, user);
@@ -36,7 +36,7 @@ module.exports = function(passport: PassportStatic) {
               }
             );
           })
-          .catch((err: Error) => console.log(err));
+          .catch((err) => console.log(err));
       }
     )
   );

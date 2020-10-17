@@ -25,7 +25,7 @@ interface gameMode {
   };
   private: { games: { [key: string]: Game } };
   ranked: {
-    que?: [
+    que: [
       { id: string; elo: number; username: string },
       { id: string; elo: number; username: string }
     ];
