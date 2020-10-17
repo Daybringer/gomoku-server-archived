@@ -101,8 +101,7 @@ server.listen(PORT);
 
 import { gameMode } from "./types/Game";
 
-// FIXME Fix the ranked que coercition and non-null assertion operators
-const gameMode: any = {
+const gameMode: gameMode = {
   quick: {
     que: [],
     games: {},
@@ -262,16 +261,16 @@ rankedSearchNsp.on("connection", function(socket) {
     // Assign Elo
     getUserElo(username, (err: Error, elo: number) => {
       if (err) console.log(err);
-      gameMode.ranked.que!.push({ id: socket.id, elo, username });
+      gameMode.ranked.que.push({ id: socket.id, elo, username });
 
-      if (gameMode.ranked.que!.length >= 2) {
+      if (gameMode.ranked.que.length >= 2) {
         let roomID = genID(gameMode.ranked.games, 7);
         gameMode.ranked.games[roomID] = {
           players: [],
           nicks: {},
           elo: {
-            [gameMode.ranked.que![0].username]: gameMode.ranked.que![0].elo,
-            [gameMode.ranked.que![1].username]: gameMode.ranked.que![1].elo,
+            [gameMode.ranked.que[0].username]: gameMode.ranked.que[0].elo,
+            [gameMode.ranked.que[1].username]: gameMode.ranked.que[1].elo,
           },
           first: 0,
           round: 0,
@@ -286,22 +285,22 @@ rankedSearchNsp.on("connection", function(socket) {
         };
 
         rankedSearchNsp
-          .to(gameMode.ranked.que![0].id)
+          .to(gameMode.ranked.que[0].id)
           .emit("gameCreated", roomID);
         rankedSearchNsp
-          .to(gameMode.ranked.que![1].id)
+          .to(gameMode.ranked.que[1].id)
           .emit("gameCreated", roomID);
 
-        gameMode.ranked.que!.splice(0, 2);
+        gameMode.ranked.que.splice(0, 2);
       }
     });
   });
 
   socket.on("disconnect", function() {
-    for (let queMember of gameMode.ranked.que!) {
+    for (let queMember of gameMode.ranked.que) {
       if (queMember.id === socket.id) {
-        let indexOfSocket = gameMode.ranked.que!.indexOf(queMember);
-        gameMode.ranked.que!.splice(indexOfSocket, 1);
+        let indexOfSocket = gameMode.ranked.que.indexOf(queMember);
+        gameMode.ranked.que.splice(indexOfSocket, 1);
       }
     }
   });
