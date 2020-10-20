@@ -31,6 +31,6 @@ export default function calibrateTime(
       return restSeconds - deltaTime / 1000;
     }
   }
-  throw new Error("Calibrate time has failed");
+  console.log("Room nonexistent");
   return 0;
 }

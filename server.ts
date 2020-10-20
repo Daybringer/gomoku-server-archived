@@ -159,7 +159,12 @@ searchNsp.on("connection", function(socket: Socket) {
 
 quickNsp.on("connection", function(socket) {
   let games = gameMode.quick.games;
+  let fullRoom = false;
   socket.on("gameJoined", function(roomID, username) {
+    if (games[roomID].players.length >= 2) {
+      fullRoom === true;
+      socket.emit("fullRoom");
+    }
     startGame(games, roomID, username, quickNsp, socket);
   });
 
@@ -172,7 +177,7 @@ quickNsp.on("connection", function(socket) {
   });
 
   socket.on("disconnect", function() {
-    playerDisconnected(games, false, quickNsp, socket);
+    if (!fullRoom) playerDisconnected(games, false, quickNsp, socket);
   });
 });
 
@@ -277,8 +282,8 @@ rankedSearchNsp.on("connection", function(socket) {
           intervalLink: null,
           isTimed: true,
           times: [
-            { timeLeft: 150, timeStamp: Date.now() },
-            { timeLeft: 150, timeStamp: Date.now() },
+            { timeLeft: 300, timeStamp: Date.now() },
+            { timeLeft: 300, timeStamp: Date.now() },
           ],
           won: null,
           gamePlan: gamePlan(15),
@@ -307,8 +312,12 @@ rankedSearchNsp.on("connection", function(socket) {
 });
 rankedNsp.on("connection", function(socket) {
   let games = gameMode.ranked.games;
-
+  let fullRoom = false;
   socket.on("gameJoined", function(roomID, username) {
+    if (games[roomID].players.length >= 2) {
+      fullRoom === true;
+      socket.emit("fullRoom");
+    }
     startGame(games, roomID, username, rankedNsp, socket);
   });
 
@@ -321,6 +330,6 @@ rankedNsp.on("connection", function(socket) {
   });
 
   socket.on("disconnect", function() {
-    playerDisconnected(games, true, rankedNsp, socket);
+    if (!fullRoom) playerDisconnected(games, true, rankedNsp, socket);
   });
 });

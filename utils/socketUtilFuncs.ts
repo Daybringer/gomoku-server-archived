@@ -230,7 +230,9 @@ function startGame(
       // taking random number representing player (0/1)
       let rndN = Math.round(Math.random());
       game.first = rndN;
-      namespace.to(roomID).emit("gameBegun", game.players[rndN], game.nicks);
+      namespace
+        .to(roomID)
+        .emit("gameBegun", game.players[rndN], game.nicks, game.first);
       if (game.isTimed) {
         game.times[rndN].timeStamp = Date.now();
         game.intervalLink = setInterval(() => {
